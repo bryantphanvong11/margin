@@ -198,3 +198,15 @@ if (existing && !isEdit) {
 }
   });
 }
+localStorage.setItem(
+    "marginUser",
+    JSON.stringify({
+        userId: "7b1c5d8e-...",
+        firstName: "Bryant",
+        lastName: "Phanvong",
+        school: "Seattle Central",
+        occupation: "Student"
+    })
+);
+const currentUser = JSON.parse(localStorage.getItem("marginUser"));
+currentUser.userId

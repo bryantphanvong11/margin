@@ -127,7 +127,18 @@ async function saveEntries() {
     });
 
 }
+async function saveSubmissionToGoogle(data) {
 
+    const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+            action: "saveSubmission",
+            ...data
+        })
+    });
+
+    return await response.json();
+}
 async function saveVersions() {
 
     await fetch(API_URL, {
