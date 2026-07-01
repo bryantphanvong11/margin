@@ -8,6 +8,7 @@
 const STORAGE_KEY_PROFILE = 'margin:profile';
 const STORAGE_KEY_THEME = 'margin:theme';
 const STORAGE_KEY_PROFILE_REGISTRY = 'margin:profiles:registry';
+const API_URL = "https://script.google.com/macros/s/AKfycbz4dbreuE8IJuF1ZMBkKlt_iR9lC8BD8afADwrlfR7RPLlFYTBYQFGH2mZmKHlSNIEGVw/exec";
 
 // ---------- Theme (mirrors index/version-detail behavior) ----------
 function initTheme() {
@@ -132,7 +133,7 @@ if (existing && !isEdit) {
     setVal('lOccupation', existing.occupation);
   }
 
-  document.getElementById('loginForm').addEventListener('submit', e => {
+  document.getElementById('loginForm').addEventListener('submit', async e => {
     e.preventDefault();
     clearError();
 
@@ -146,7 +147,7 @@ if (existing && !isEdit) {
       showError('First and last name are required so the page can greet the right person.');
       return;
     }
-
+    
     const profile = {
       firstName,
       lastName,
@@ -157,16 +158,43 @@ if (existing && !isEdit) {
       updatedAt: new Date().toISOString()
     };
 
-    const ok = saveProfile(profile);
-    if (!ok) {
-      showError('Could not save your profile — your browser storage may be full or disabled.');
-      return;
+    try {
+
+    const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+            action: "createUser",
+            firstName,
+            lastName,
+            instagram,
+            school,
+            occupation
+        })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+        showError("Could not create your profile.");
+        return;
     }
 
-    // Register in the device-wide profile registry so the account panel
-    // on the main page can list all profiles on this browser.
+    profile.userId = result.userId;
+
+    saveProfile(profile);
     registerProfileInRegistry(profile);
 
     window.location.href = returnTo;
+
+} catch (err) {
+
+    console.error(err);
+
+    showError("Could not connect to the server.");
+
+}
   });
 }
