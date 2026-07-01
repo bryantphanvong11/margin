@@ -10,6 +10,7 @@ let activeFilter = 'all';
 let editingEntryId = null;
 let activePromptEntryId = null;
 
+const API_URL = "https://script.google.com/macros/s/AKfycbz4dbreuE8IJuF1ZMBkKlt_iR9lC8BD8afADwrlfR7RPLlFYTBYQFGH2mZmKHlSNIEGVw/exec";
 const STORAGE_KEY_ENTRIES = 'margin:entries';
 const STORAGE_KEY_VERSIONS = 'margin:versions';
 const STORAGE_KEY_THEME = 'margin:theme';
@@ -72,21 +73,25 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 // not inside the Claude.ai artifact sandbox, so window.storage
 // is not available here)
 // ============================================================
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_ENTRIES);
-    entries = raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    console.error('Failed to load entries', err);
-    entries = [];
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_VERSIONS);
-    versions = raw ? JSON.parse(raw) : [];
-  } catch (err) {
-    console.error('Failed to load versions', err);
-    versions = [];
-  }
+async function loadData() {
+    try {
+
+        const response = await fetch(API_URL);
+
+        const data = await response.json();
+
+        entries = data.entries || [];
+        versions = data.versions || [];
+
+        render();
+
+    } catch (err) {
+
+        console.error(err);
+
+        showToast("Couldn't load Google Sheets data.");
+
+    }
   render();
   openEntryFromUrlIfPresent();
 }
@@ -105,25 +110,40 @@ function openEntryFromUrlIfPresent() {
   window.history.replaceState({}, '', url);
 }
 
-function saveEntries() {
-  try {
-    localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
-    return true;
-  } catch (err) {
-    console.error('Failed to save entries', err);
-    showToast('Could not save — your browser storage may be full or disabled.');
-    return false;
-  }
+async function saveEntries() {
+
+    await fetch(API_URL, {
+
+        method: "POST",
+
+        body: JSON.stringify({
+
+            action: "saveEntries",
+
+            entries
+
+        })
+
+    });
+
 }
 
-function saveVersions() {
-  try {
-    localStorage.setItem(STORAGE_KEY_VERSIONS, JSON.stringify(versions));
-    return true;
-  } catch (err) {
-    console.error('Failed to save versions', err);
-    return false;
-  }
+async function saveVersions() {
+
+    await fetch(API_URL, {
+
+        method: "POST",
+
+        body: JSON.stringify({
+
+            action: "saveVersions",
+
+            versions
+
+        })
+
+    });
+
 }
 
 function uid() {
@@ -912,7 +932,7 @@ document.getElementById('emptyAddBtn').addEventListener('click', () => openEntry
 document.getElementById('entryModalClose').addEventListener('click', closeEntryModal);
 entryModal.addEventListener('click', e => { if (e.target === entryModal) closeEntryModal(); });
 
-document.getElementById('saveEntryBtn').addEventListener('click', () => {
+document.getElementById('saveEntryBtn').addEventListener('click', async () => {
   const company = document.getElementById('fCompany').value.trim();
   const role = document.getElementById('fRole').value.trim();
   if (!company || !role) {
@@ -935,7 +955,7 @@ document.getElementById('saveEntryBtn').addEventListener('click', () => {
   } else {
     entries.push({ id: uid(), ...data, claudeNote: '' });
   }
-  saveEntries();
+  await saveEntries();
   closeEntryModal();
   render();
   showToast('Submission saved.');
@@ -946,9 +966,9 @@ document.getElementById('deleteEntryBtn').addEventListener('click', () => {
   closeEntryModal();
 });
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
   entries = entries.filter(e => e.id !== id);
-  saveEntries();
+  await saveEntries();
   render();
   showToast('Entry deleted.');
 }
