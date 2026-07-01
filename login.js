@@ -8,7 +8,7 @@
 const STORAGE_KEY_PROFILE = 'margin:profile';
 const STORAGE_KEY_THEME = 'margin:theme';
 const STORAGE_KEY_PROFILE_REGISTRY = 'margin:profiles:registry';
-const API_URL = "https://script.google.com/macros/s/AKfycbz4dbreuE8IJuF1ZMBkKlt_iR9lC8BD8afADwrlfR7RPLlFYTBYQFGH2mZmKHlSNIEGVw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzg0BseYMyBGkiKnvzi7YykUfrJBHqBEPVktjMfQl1XVPkJpwPjMsXi2xYCVNgASxC0NQ/exec";
 
 // ---------- Theme (mirrors index/version-detail behavior) ----------
 function initTheme() {

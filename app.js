@@ -10,7 +10,7 @@ let activeFilter = 'all';
 let editingEntryId = null;
 let activePromptEntryId = null;
 
-const API_URL = "https://script.google.com/macros/s/AKfycbz4dbreuE8IJuF1ZMBkKlt_iR9lC8BD8afADwrlfR7RPLlFYTBYQFGH2mZmKHlSNIEGVw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzg0BseYMyBGkiKnvzi7YykUfrJBHqBEPVktjMfQl1XVPkJpwPjMsXi2xYCVNgASxC0NQ/exec";
 const STORAGE_KEY_ENTRIES = 'margin:entries';
 const STORAGE_KEY_VERSIONS = 'margin:versions';
 const STORAGE_KEY_THEME = 'margin:theme';
