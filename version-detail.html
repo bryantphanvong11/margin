@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+// Auth guard — redirect to the profile/sign-in page if no profile is
+// saved yet on this browser. Runs first, before styles or app.js load.
+(function(){
+  try {
+    if (!localStorage.getItem('margin:profile')) {
+      var ret = encodeURIComponent('version-detail.html' + window.location.search);
+      window.location.replace('login.html?return=' + ret);
+    }
+  } catch (e) { /* localStorage unavailable — let the app load normally */ }
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margin — resume version detail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="version-detail.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="brand">
+      <a href="index.html" class="back-link" title="Back to backlog">&larr;</a>
+      <span class="mark">Margin</span>
+      <span class="tag" id="versionTag">resume version</span>
+    </div>
+    <div class="masthead-right">
+      <span class="profile-chip" id="profileChip" style="display:none;">
+        <span class="profile-name-prefix">Hi,</span> <span id="profileName">—</span>
+      </span>
+      <button class="icon-btn-circle" id="profileEditBtn" title="Edit profile" aria-label="Edit profile" style="display:none;">&#9998;</button>
+      <button class="icon-btn-circle danger" id="profileLogoutBtn" title="Log out" aria-label="Log out" style="display:none;">&#9099;</button>
+      <span class="date" id="dateline"></span>
+      <button class="theme-toggle" id="themeToggle" title="Switch theme" aria-label="Switch between light and dark theme">&#9789;</button>
+    </div>
+  </div>
+
+  <div id="notFoundState" style="display:none;">
+    <p class="deck">This resume version couldn't be found — it may have been deleted, or the link is out of date.</p>
+    <a href="index.html" class="btn btn-primary" style="display:inline-block;margin-top:10px;text-decoration:none;">&larr; Back to backlog</a>
+  </div>
+
+  <div id="detailContent" style="display:none;">
+
+    <div class="version-detail-head">
+      <h1 id="versionName">—</h1>
+      <p class="version-added" id="versionAdded"></p>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-strip">
+      <div class="stat-cell">
+        <div class="stat-label">Times used</div>
+        <div class="stat-value" id="vStatUsed">0</div>
+        <div class="stat-sub" id="vStatUsedSub">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Interview rate</div>
+        <div class="stat-value" id="vStatInterview">—</div>
+        <div class="stat-sub" id="vStatInterviewSub">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Offers</div>
+        <div class="stat-value" id="vStatOffers">0</div>
+        <div class="stat-sub" id="vStatOffersSub">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Still pending</div>
+        <div class="stat-value" id="vStatPending">0</div>
+        <div class="stat-sub" id="vStatPendingSub">—</div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <!-- RESUME VIEWER -->
+      <div class="resume-panel">
+        <div class="section-head" style="margin-top:0;">
+          <h2>The resume</h2>
+        </div>
+        <div id="resumeViewerWrap">
+          <div class="no-file-state" id="noFileState" style="display:none;">
+            <p>No file attached to this version yet.</p>
+            <a href="index.html" class="helper-text">Go back and edit this version to attach one.</a>
+          </div>
+          <div id="pdfViewer" style="display:none;"></div>
+          <div class="text-resume" id="textViewer" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- SUBMISSIONS LIST -->
+      <div class="submissions-panel">
+        <div class="section-head" style="margin-top:0;">
+          <h2>Used in</h2>
+          <span class="count" id="usedInCount"></span>
+        </div>
+        <div id="usedInList"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="version-detail.js"></script>
+</body>
+</html>

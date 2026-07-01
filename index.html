@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+// Auth guard — redirect to the profile/sign-in page if no profile is
+// saved yet on this browser. Runs first, before styles or app.js load.
+(function(){
+  try {
+    if (!localStorage.getItem('margin:profile')) {
+      var ret = encodeURIComponent('index.html' + window.location.search);
+      window.location.replace('login.html?return=' + ret);
+    }
+  } catch (e) { /* localStorage unavailable — let the app load normally */ }
+})();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margin — submission backlog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="brand">
+      <span class="mark">Margin</span>
+      <span class="tag">submission backlog</span>
+    </div>
+    <div class="masthead-right">
+      <span class="profile-chip" id="profileChip" style="display:none;">
+        <span class="profile-name-prefix">Hi,</span> <span id="profileName">—</span>
+      </span>
+      <button class="icon-btn-circle" id="profileEditBtn" title="Edit profile" aria-label="Edit profile" style="display:none;">&#9998;</button>
+      <button class="icon-btn-circle danger" id="profileLogoutBtn" title="Log out" aria-label="Log out" style="display:none;">&#9099;</button>
+      <span class="date" id="dateline"></span>
+      <button class="theme-toggle" id="themeToggle" title="Switch theme" aria-label="Switch between light and dark theme">&#9789;</button>
+    </div>
+  </div>
+  <p class="deck">Every application logged in one place. Margin reads back across your own history — which resume version is actually landing interviews, where the pipeline is stalling, what's worth changing before the next submission.</p>
+
+  <!-- RADAR CENTERPIECE -->
+  <div class="radar-centerpiece">
+    <div class="radar-main">
+      <div class="radar-head">
+        <h2>Keyword radar</h2>
+        <div class="radar-actions">
+          <button class="btn" id="refineKeywordsBtn">Refine categories with Claude</button>
+        </div>
+      </div>
+      <div class="radar-chart-wrap" id="radarChartWrap">
+        <div class="radar-empty" id="radarEmpty">Log a few submissions with job posting text or saved Claude notes, and the recurring themes will show up here.</div>
+        <svg id="radarSvg" viewBox="0 0 400 390" style="display:none;"></svg>
+      </div>
+      <div class="radar-detail-panel" id="radarDetailPanel">
+        <div class="radar-detail-placeholder" id="radarDetailPlaceholder">Hover over any label on the chart for what it actually means in a hiring context.</div>
+        <div class="radar-detail-content" id="radarDetailContent" style="display:none;">
+          <div class="radar-detail-head">
+            <span class="radar-detail-name" id="radarDetailName"></span>
+            <div class="radar-detail-stats">
+              <span class="radar-detail-stat radar-detail-stat-freq" id="radarDetailFreqStat"></span>
+              <span class="radar-detail-stat radar-detail-stat-success" id="radarDetailSuccessStat"></span>
+            </div>
+          </div>
+          <p class="radar-detail-text" id="radarDetailText"></p>
+        </div>
+      </div>
+      <div class="radar-legend">
+        <div class="legend-item"><span class="legend-swatch swatch-freq"></span>How often it shows up</div>
+        <div class="legend-item"><span class="legend-swatch swatch-success"></span>Interview rate when present</div>
+      </div>
+    </div>
+    <div class="mascot-dock-mini">
+      <svg class="mascot-svg mood-neutral mascot-bob" id="mascotSvg" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Margin's mood indicator">
+        <title id="mascotTitle">Margin is waiting for data</title>
+        <rect class="m-body" x="6" y="10" width="48" height="42" rx="6"></rect>
+        <circle class="m-eye" cx="21" cy="28" r="3"></circle>
+        <circle class="m-eye" cx="39" cy="28" r="3"></circle>
+        <path class="m-mouth" id="mascotMouth" d="M 20 40 Q 30 40 40 40"></path>
+      </svg>
+      <div class="mascot-line-mini" id="mascotLine">Log a submission and I'll start tracking how it's going.</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-strip">
+    <div class="stat-cell" id="statCellTotal">
+      <div class="stat-label">Total submitted</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub" id="statTotalSub">—</div>
+    </div>
+    <div class="stat-cell" id="statCellInterview">
+      <div class="stat-label">Interview rate</div>
+      <div class="stat-value" id="statInterviewRate">—</div>
+      <div class="stat-sub" id="statInterviewSub">—</div>
+    </div>
+    <div class="stat-cell" id="statCellOffer">
+      <div class="stat-label">Offer rate</div>
+      <div class="stat-value" id="statOfferRate">—</div>
+      <div class="stat-sub" id="statOfferSub">—</div>
+    </div>
+    <div class="stat-cell" id="statCellPending">
+      <div class="stat-label">Awaiting response</div>
+      <div class="stat-value" id="statPending">0</div>
+      <div class="stat-sub" id="statPendingSub">—</div>
+    </div>
+  </div>
+
+  <div class="signal-account-row">
+    <div class="signal-box">
+      <div class="signal-head">What the data's saying</div>
+      <ul class="signal-list" id="signalList"></ul>
+    </div>
+
+    <!-- ACCOUNT PANEL -->
+    <div class="account-panel">
+      <div class="signal-head">Active account</div>
+      <div class="account-identity" id="accountIdentity">
+        <div class="acct-name" id="acctName">—</div>
+        <div class="acct-meta" id="acctMeta"></div>
+        <div class="acct-since" id="acctSince"></div>
+      </div>
+      <div class="acct-actions">
+        <button class="btn" id="acctEditProfileBtn">Edit profile</button>
+        <button class="btn btn-danger-outline" id="acctDeleteBtn">Delete account &amp; data</button>
+      </div>
+      <div class="acct-divider"></div>
+      <div class="acct-profiles-head">
+        <span class="acct-profiles-label">All profiles on this device</span>
+        <button class="acct-profiles-toggle" id="acctProfilesToggle" aria-expanded="false">Show</button>
+      </div>
+      <div class="acct-profiles-list" id="acctProfilesList" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- COMMUNITY PANEL -->
+  <div class="community-panel" id="communityPanel">
+    <div class="community-head">
+      <div class="community-head-left">
+        <h2>Who's using Margin</h2>
+        <span class="community-live-badge">Live from GitHub</span>
+      </div>
+      <div class="community-head-right">
+        <button class="btn" id="exportProfileCardBtn">Export my profile card</button>
+        <button class="btn community-refresh-btn" id="communityRefreshBtn" title="Refresh">&#8635;</button>
+      </div>
+    </div>
+    <div class="community-config-row" id="communityConfigRow">
+      <span class="community-config-label">GitHub raw URL for profiles.json</span>
+      <div class="community-config-input-wrap">
+        <input type="text" class="community-config-input" id="communityGithubUrl"
+          placeholder="https://raw.githubusercontent.com/you/repo/main/profiles.json">
+        <button class="btn" id="communitySetUrlBtn">Set</button>
+      </div>
+      <p class="helper-text" style="margin-top:6px;">
+        Paste the <code>raw.githubusercontent.com</code> URL to your <code>profiles.json</code> file.
+        <a class="community-gh-link" href="https://github.com" target="_blank" rel="noopener">Open GitHub &rarr;</a>
+      </p>
+    </div>
+    <div id="communityBody">
+      <div class="community-loading" id="communityLoading" style="display:none;">
+        <span class="community-loading-dot"></span><span class="community-loading-dot"></span><span class="community-loading-dot"></span>
+        <span class="community-loading-text">Fetching profiles…</span>
+      </div>
+      <div class="community-error" id="communityError" style="display:none;"></div>
+      <div class="community-grid" id="communityGrid" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- EXPORT PROFILE CARD MODAL -->
+  <div class="modal-overlay" id="exportCardModal">
+    <div class="modal" style="max-width:580px;">
+      <div class="modal-head">
+        <h2>Export your profile card</h2>
+        <button class="modal-close" id="exportCardModalClose">&times;</button>
+      </div>
+      <div class="modal-body prompt-panel">
+        <p class="helper-text" style="margin-bottom:14px;">
+          Copy this JSON snippet and add it to the <code>profiles</code> array in your <code>profiles.json</code> file on GitHub.
+          Your stats are snapshotted at the time of export — re-export and update the file whenever you want them refreshed.
+        </p>
+        <div class="prompt-box" id="exportCardText" style="font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;"></div>
+        <button class="btn btn-primary" id="copyExportCardBtn" style="margin-top:12px;">Copy JSON</button>
+        <span class="copy-confirm" id="copyExportCardConfirm">Copied</span>
+        <div class="acct-divider" style="margin:18px 0 14px;"></div>
+        <p class="helper-text">
+          <b>How to add yourself:</b><br>
+          1. Open your <code>profiles.json</code> on GitHub and click the pencil (edit) icon.<br>
+          2. Paste this object into the <code>"profiles"</code> array (add a comma after the previous entry).<br>
+          3. Commit the change. Margin will pick it up on the next refresh.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESUME VERSIONS -->
+  <div class="version-manager">
+    <div class="version-manager-head">
+      <h2>Resume versions</h2>
+      <button class="btn" id="addVersionBtn">+ New version</button>
+    </div>
+    <div id="versionGrid"></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="section-head">
+    <h2>Submissions</h2>
+    <span class="count" id="entryCount"></span>
+  </div>
+  <div class="toolbar">
+    <div class="toolbar-left" id="filterPills">
+      <button class="filter-pill active" data-filter="all">All</button>
+      <button class="filter-pill" data-filter="applied">Applied</button>
+      <button class="filter-pill" data-filter="interview">Interview</button>
+      <button class="filter-pill" data-filter="offer">Offer</button>
+      <button class="filter-pill" data-filter="rejected">Rejected</button>
+      <button class="filter-pill" data-filter="withdrawn">Withdrawn</button>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn" id="importBtn">Import</button>
+      <input type="file" id="importFile" accept=".json">
+      <button class="btn" id="exportBtn">Export</button>
+      <button class="btn btn-primary" id="addEntryBtn">+ Log submission</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="entryTable">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Resume version</th>
+          <th>Applied</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="entryTbody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <p>No submissions logged yet. Start with your most recent one.</p>
+      <button class="btn btn-primary" id="emptyAddBtn">+ Log your first submission</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ENTRY MODAL -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="entryModalTitle">Log a submission</h2>
+      <button class="modal-close" id="entryModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field-group">
+          <label>Company</label>
+          <input type="text" id="fCompany" placeholder="e.g. NVIDIA">
+        </div>
+        <div class="field-group">
+          <label>Role title</label>
+          <input type="text" id="fRole" placeholder="e.g. SWE Intern">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="applied">Applied</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+            <option value="withdrawn">Withdrawn</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Resume version used</label>
+          <select id="fVersion"></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Date applied</label>
+          <input type="date" id="fDateApplied">
+        </div>
+        <div class="field-group">
+          <label>Last status change</label>
+          <input type="date" id="fDateUpdated">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Notes</label>
+        <textarea class="modal-textarea" id="fNotes" placeholder="Referral source, recruiter contact, interview format, anything worth remembering..."></textarea>
+      </div>
+      <div class="field-group">
+        <label>Job posting text (optional, improves Claude's take)</label>
+        <textarea class="modal-textarea" id="fPosting" placeholder="Paste the job description here if you want sharper advice later..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="icon-btn danger" id="deleteEntryBtn" style="display:none;">Delete this entry</button>
+      <button class="btn btn-primary" id="saveEntryBtn">Save submission</button>
+    </div>
+  </div>
+</div>
+
+<!-- VERSION MODAL -->
+<div class="modal-overlay" id="versionModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-head">
+      <h2>New resume version</h2>
+      <button class="modal-close" id="versionModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label>Version label</label>
+        <input type="text" id="fVersionName" placeholder="e.g. Semiconductor-focused v2">
+        <p class="helper-text">A short name you'll recognize when tagging submissions. You can rename or retire it later.</p>
+      </div>
+
+      <div class="field-group">
+        <label>Attach the resume (optional, but needed for the detail view)</label>
+        <div class="dropzone" id="versionDropzone">
+          <input type="file" id="versionFileInput" accept=".pdf">
+          <span class="dz-icon">&#9636;</span>
+          <div class="dz-text"><b>Click to upload</b> or drag a PDF here</div>
+          <div class="dz-hint">PDF, ideally under 1.5MB</div>
+        </div>
+        <div class="filename-chip" id="versionFilenameChip">
+          <span class="fn" id="versionFilenameText"></span>
+          <span class="fn-size" id="versionFilenameSize"></span>
+          <button id="versionClearFile" title="Remove file">&times;</button>
+        </div>
+        <div class="size-warning" id="versionSizeWarning"></div>
+
+        <div class="or-divider">or paste the text instead</div>
+        <textarea class="modal-textarea" id="fVersionText" placeholder="Paste the resume text here — useful if the PDF is large, or you just don't have a file handy." style="min-height:110px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span></span>
+      <button class="btn btn-primary" id="saveVersionBtn">Add version</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLAUDE PROMPT MODAL -->
+<div class="modal-overlay" id="promptModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <h2>Get Claude's take</h2>
+      <button class="modal-close" id="promptModalClose">&times;</button>
+    </div>
+    <div class="modal-body prompt-panel">
+      <p class="helper-text" style="margin-bottom:14px;">Copy this, paste it into a chat with Claude, then bring the response back here to log it against this submission.</p>
+      <div class="prompt-box" id="promptText"></div>
+      <button class="btn btn-primary" id="copyPromptBtn">Copy prompt</button>
+      <span class="copy-confirm" id="copyConfirm">Copied</span>
+
+      <div style="margin-top:22px;">
+        <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--pencil);margin-bottom:7px;">Paste Claude's response to save it</label>
+        <textarea class="modal-textarea" id="responsePaste" placeholder="Paste Claude's answer here..." style="min-height:120px;"></textarea>
+        <button class="btn" id="saveResponseBtn" style="margin-top:10px;">Save as note on this entry</button>
+      </div>
+      <div class="note-display" id="savedNoteDisplay">
+        <div class="note-label">Saved note</div>
+        <div id="savedNoteText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KEYWORD REFINE MODAL -->
+<div class="modal-overlay" id="refineModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <h2>Refine keyword categories</h2>
+      <button class="modal-close" id="refineModalClose">&times;</button>
+    </div>
+    <div class="modal-body prompt-panel">
+      <p class="helper-text" style="margin-bottom:14px;">The radar currently groups keywords by raw word matching. Copy this prompt, paste it into a chat with Claude, then bring the response back here — Claude will group related terms (like "react", "react.js", "frontend") into cleaner named categories, and the radar will use those instead.</p>
+      <div class="prompt-box" id="refinePromptText"></div>
+      <button class="btn btn-primary" id="copyRefinePromptBtn">Copy prompt</button>
+      <span class="copy-confirm" id="copyRefineConfirm">Copied</span>
+
+      <div style="margin-top:22px;">
+        <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--pencil);margin-bottom:7px;">Paste Claude's response to apply it</label>
+        <textarea class="modal-textarea" id="refineResponsePaste" placeholder="Paste Claude's JSON response here..." style="min-height:140px;"></textarea>
+        <button class="btn btn-primary" id="applyRefineBtn" style="margin-top:10px;">Apply categories to radar</button>
+        <button class="btn" id="resetRefineBtn" style="margin-top:10px;">Reset to raw keywords</button>
+      </div>
+      <div class="note-display" id="refineAppliedDisplay">
+        <div class="note-label">Applied</div>
+        <div id="refineAppliedText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE ACCOUNT MODAL -->
+<div class="modal-overlay" id="deleteAccountModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head">
+      <h2 id="deleteAccountTitle">Delete account</h2>
+      <button class="modal-close" id="deleteAccountModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="helper-text" style="margin-bottom:18px;" id="deleteAccountDesc">This will permanently remove the profile and all submissions and resume versions stored with it. This cannot be undone.</p>
+      <div class="delete-acct-options">
+        <label class="delete-acct-option">
+          <input type="radio" name="deleteScope" value="profile-only" id="deleteScopeProfileOnly">
+          <span class="dao-label">Profile only</span>
+          <span class="dao-sub">Remove profile details — keep all submissions and resume versions in local storage.</span>
+        </label>
+        <label class="delete-acct-option">
+          <input type="radio" name="deleteScope" value="everything" id="deleteScopeEverything" checked>
+          <span class="dao-label">Everything</span>
+          <span class="dao-sub">Remove profile, all submissions, all resume versions, and keyword mappings.</span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn" id="deleteAccountCancelBtn">Cancel</button>
+      <button class="btn btn-danger" id="deleteAccountConfirmBtn">Permanently delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

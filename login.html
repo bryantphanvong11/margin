@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margin — sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="brand">
+      <span class="mark">Margin</span>
+      <span class="tag" id="pageTag">sign in</span>
+    </div>
+    <div class="masthead-right">
+      <span class="date" id="dateline"></span>
+      <button class="theme-toggle" id="themeToggle" title="Switch theme" aria-label="Switch between light and dark theme">&#9789;</button>
+    </div>
+  </div>
+
+  <div class="login-stage">
+    <div class="login-card">
+      <div class="login-head">
+        <h1 id="loginHeading">Welcome to Margin</h1>
+        <p class="login-deck" id="loginDeck">A few quick details before you get to your backlog. This stays on your device — nothing is sent anywhere.</p>
+      </div>
+
+      <div class="login-error" id="loginError"></div>
+
+      <form id="loginForm">
+        <div class="field-row">
+          <div class="field-group">
+            <label>First name</label>
+            <input type="text" id="lFirstName" placeholder="Ada" autocomplete="given-name">
+          </div>
+          <div class="field-group">
+            <label>Last name</label>
+            <input type="text" id="lLastName" placeholder="Lovelace" autocomplete="family-name">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Instagram tag <span class="optional-tag">optional</span></label>
+          <div class="ig-input-wrap">
+            <input type="text" id="lInstagram" placeholder="adalovelace" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label>School <span class="optional-tag">optional</span></label>
+            <input type="text" id="lSchool" placeholder="e.g. UW" autocomplete="organization">
+          </div>
+          <div class="field-group">
+            <label>Occupation <span class="optional-tag">optional</span></label>
+            <input type="text" id="lOccupation" placeholder="e.g. CS student" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="login-actions">
+          <a href="index.html" class="login-cancel" id="loginCancel" style="display:none;">Cancel</a>
+          <button type="submit" class="btn btn-primary" id="loginSubmitBtn">Enter Margin</button>
+        </div>
+      </form>
+
+      <p class="login-footer-note">Stored only in this browser's local storage. There's no account, no password, and no server — clearing your browser data clears this too.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="login.js"></script>
+</body>
+</html>

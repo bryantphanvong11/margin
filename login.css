@@ -1,0 +1,53 @@
+/* ============================================================
+   login.css — styles specific to the profile/login page.
+   Loaded alongside the shared style.css, which already provides
+   theme variables, masthead, field-group/input styles, buttons.
+   ============================================================ */
+
+.login-stage{
+  display:flex;justify-content:center;padding:36px 0 60px;
+}
+
+.login-card{
+  width:100%;max-width:440px;border:1.5px solid var(--ink);background:var(--paper-2);
+  padding:34px 32px 30px;transition:background var(--transition-base), border-color var(--transition-base);
+}
+
+.login-head{margin-bottom:24px;}
+.login-head h1{
+  font-family:'Source Serif 4',serif;font-weight:600;font-size:24px;margin:0 0 8px;letter-spacing:-0.3px;
+}
+.login-deck{font-family:'Source Serif 4',serif;font-size:14px;color:var(--ink-soft);line-height:1.55;margin:0;}
+
+.field-group label .optional-tag{
+  font-weight:400;text-transform:none;letter-spacing:0;color:var(--pencil);margin-left:4px;font-family:'Inter',sans-serif;font-style:italic;
+}
+
+.ig-input-wrap{position:relative;}
+.ig-input-wrap input{padding-left:24px;}
+.ig-input-wrap::before{
+  content:'@';position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  color:var(--pencil);font-size:14px;pointer-events:none;
+}
+
+.login-error{
+  display:none;font-size:12.5px;color:var(--red);background:var(--red-soft);border:1px solid var(--red);
+  padding:9px 13px;margin-bottom:18px;line-height:1.45;
+}
+.login-error.show{display:block;animation:rowIn 0.2s ease;}
+
+.login-actions{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:8px;}
+.login-actions .btn-primary{flex:1;justify-content:center;}
+.login-cancel{
+  font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;
+  color:var(--pencil);text-decoration:none;white-space:nowrap;transition:color var(--transition-fast);
+}
+.login-cancel:hover{color:var(--ink);}
+
+.login-footer-note{
+  font-size:11px;color:var(--pencil);line-height:1.5;text-align:center;margin:20px 0 0;
+}
+
+@media (max-width:480px){
+  .login-card{padding:28px 22px 24px;}
+}
